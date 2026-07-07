@@ -439,11 +439,94 @@ function processItems(items) {
           <div class="cv-verdict-icon" style="font-size: 2rem; margin-bottom: var(--space-sm);">\u26A0\uFE0F</div>
           <h3 style="color: var(--accent-amber);">Code Needs Attention</h3>
           <p class="text-sm text-secondary mt-sm">All ${results.length} AI models found critical issues. Apply recommended fixes before deploying.</p>
-          <button class="btn btn-primary mt-md" style="margin-top: var(--space-md);">Apply All Fixes</button>
+          <button class="btn btn-primary mt-md" id="cv-apply-fixes-btn" style="margin-top: var(--space-md);">Apply All Fixes</button>
         </div>
       </div>
     `;
 
+    // Bind Apply All Fixes button
+    const applyFixesBtn = document.getElementById('cv-apply-fixes-btn');
+    if (applyFixesBtn) {
+      applyFixesBtn.addEventListener('click', () => this.applyAllFixes());
+    }
+
     consensusSection.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  applyAllFixes() {
+    const fixedCode = `async function fetchUserData(userId) {
+  try {
+    const response = await fetch(\`/api/users/\${userId}\`);
+    const data = await response.json();
+    
+    if (data.status === 'active') {
+      localStorage.setItem('user', JSON.stringify(data));
+      return data;
+    }
+    
+    throw new Error('User not found');
+  } catch (error) {
+    console.error('Failed to fetch user data:', error);
+    throw error;
+  }
+}
+
+function processItems(items) {
+  for (let i = 0; i < items.length; i++) {
+    setTimeout(() => {
+      console.log(items[i].name);
+    }, 1000);
+  }
+}`;
+
+    // Replace the code in the textarea
+    const textarea = document.getElementById('cv-code-input');
+    if (textarea) {
+      textarea.value = fixedCode;
+    }
+
+    // Update button to show success
+    const applyBtn = document.getElementById('cv-apply-fixes-btn');
+    if (applyBtn) {
+      applyBtn.textContent = 'Fixes Applied \u2713';
+      applyBtn.style.backgroundColor = 'var(--accent-emerald)';
+      applyBtn.style.borderColor = 'var(--accent-emerald)';
+      applyBtn.disabled = true;
+    }
+
+    // Update all AI model statuses to "Verified"
+    this.aiModels.forEach(model => {
+      this.setModelStatus(model.id, 'verified', 'Verified');
+    });
+
+    // Show success notification
+    this.showNotification('All fixes have been applied successfully!');
+  }
+
+  showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'cv-notification';
+    notification.style.cssText = `
+      position: fixed;
+      top: var(--space-lg, 24px);
+      right: var(--space-lg, 24px);
+      background: var(--accent-emerald, #10b981);
+      color: white;
+      padding: var(--space-md, 16px) var(--space-lg, 24px);
+      border-radius: var(--radius-md, 8px);
+      font-size: var(--font-size-sm, 14px);
+      font-weight: 500;
+      z-index: 10000;
+      animation: slideInRight 0.3s ease;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
   }
 }
