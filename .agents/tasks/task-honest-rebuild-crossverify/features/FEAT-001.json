@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Complete rewrite of js/crossverify.js: remove all fake simulation logic, implement real AST-based static analysis using a self-contained recursive-descent JavaScript parser (for browser use), add real LLM API integration (Claude + ChatGPT + other providers) for conversational explanations, add API key management UI, and create a test script to validate the analysis engine.",
+  "status": "in_progress",
+  "steps": [
+    "STEP 1 - Remove fake simulation: Delete the entire existing CrossVerify class contents in js/crossverify.js. Remove: the 6 aiModels array, the sampleCode string, generateVerificationResults() with its substring checks, the fake staggered setTimeout delays, the hardcoded agreements array, the consensus score calculation, the renderModelCard() method, displayModelResult(), showConsensus(), applyAllFixes(). Keep ONLY the class shell and the visual structure concept (panel, glass-card, textarea).",
+    "STEP 2 - Implement a self-contained recursive-descent JavaScript parser in the browser. Since the app is a static HTML page with no bundler and no npm, we cannot use the Node.js ESLint global at runtime. Write a lightweight JS parser (or a simplified tokenizer+AST walker) embedded directly in crossverify.js that can: (a) parse JavaScript into an AST with node types like VariableDeclaration, IfStatement, CallExpression, AssignmentExpression, ForStatement, etc., (b) track line/column info for each node. The parser needs to handle enough of ES2015+ to detect the 4 target patterns. Alternatively, include a minified copy of Acorn (which is ~30KB) directly in the project since it's MIT-licensed and already on the system at /root/.nvm/versions/node/v22.22.3/lib/node_modules/eslint/node_modules/acorn/.",
+    "STEP 3 - Implement AST-based analysis rules. Using the parser from step 2, implement 4 real detection rules that produce structured findings {line, column, endLine, endColumn, severity, ruleId, message}: (a) detect-var-declarations: find VariableDeclaration nodes with kind='var', report them with severity 'warning', (b) detect-missing-await: find CallExpression nodes where callee is a MemberExpression with property .json()/.text()/.blob()/.arrayBuffer()/.formData() that are NOT wrapped in an AwaitExpression within an async function, report as 'error', (c) detect-assignment-in-condition: find IfStatement/WhileStatement/ForStatement nodes whose test contains an AssignmentExpression (not comparison), report as 'error', (d) detect-non-string-localstorage: find CallExpression nodes calling localStorage.setItem where the second argument is an Identifier (not a string literal and not wrapped in JSON.stringify()), report as 'warning'.",
+    "STEP 4 - Implement real LLM API integration for conversational explanations. Add a single pipeline: findings from AST analysis -> one real API call to explain them conversationally. Support multiple providers (Claude via api.anthropic.com, ChatGPT via api.openai.com, and others). The user selects which provider to use. The LLM's job is ONLY to translate real findings into friendly explanations, NOT to independently judge code. Handle API failures gracefully (show raw findings if API fails). Clearly label in UI: 'Detected by: static analysis' vs 'Explained by: AI (Claude/ChatGPT/etc)'. Add API key input UI element (stored in localStorage, with a settings section).",
+    "STEP 5 - Rebuild the CrossVerify UI. The panel should have: (a) a textarea for code input with a 'Load Sample' button and an 'Analyze' button, (b) a settings/config area for API keys (collapsible), (c) a results section showing structured findings as a list with line, column, severity badges, ruleId, and message, (d) below each finding: an AI explanation section (or 'waiting for AI...' / 'AI unavailable - showing raw analysis only'), (e) transparent labeling of what layer produced what. Do NOT include any multi-model 'voting' or 'agreement' UI. Add a comment in the code noting multi-model verification was intentionally deferred.",
+    "STEP 6 - Create a Node.js test script at /projects/sandbox/ai-dev-companion/test-analysis.js that imports/requires the analysis logic and tests it against 4+ diverse code snippets (NOT the original sample): (a) a snippet with var in a for-of loop, (b) a snippet with missing await on fetch().then() pattern vs a correct async/await, (c) a snippet with assignment-in-condition using == vs =, (d) a snippet calling localStorage.setItem with an object. Confirm each test produces correct findings and does not produce false positives on clean code.",
+    "STEP 7 - Update index.html if needed: ensure the script tag for crossverify.js is present, add any new script tags if the parser is in a separate file (e.g., js/acorn.min.js)."
+  ],
+  "acceptance_criteria": [
+    "Zero remaining hardcoded 'finding' strings tied to fake AI model identities in crossverify.js",
+    "Zero remaining substring-based checks (code.includes) for bug detection",
+    "The 6-model roster (claude/chatgpt/kimi/glm/cline/codex) UI is completely removed",
+    "AST analysis correctly detects var declarations, missing await on .json(), assignment-in-condition, and non-string localStorage.setItem in code that is NOT the hardcoded sample",
+    "Running NODE_OPTIONS='' node test-analysis.js passes all test cases",
+    "The UI shows a single analysis pipeline: real parser finds issues -> optional LLM explains them",
+    "API key input exists for Claude, ChatGPT, and other providers",
+    "Each finding in the UI is clearly labeled 'Detected by: static analysis' and AI explanations labeled 'Explained by: AI'",
+    "A comment exists in crossverify.js noting multi-model verification is intentionally deferred",
+    "The code makes real API calls (to api.anthropic.com, api.openai.com) that will work on the user's local machine with internet access"
+  ],
+  "verification": [
+    "Run: NODE_OPTIONS='' node test-analysis.js - all tests should pass",
+    "Grep crossverify.js for 'code.includes' - should return zero results",
+    "Grep crossverify.js for 'generateVerificationResults' - should return zero results",
+    "Grep crossverify.js for the old model IDs (kimi, glm, cline, codex as AI model identifiers) - should return zero results",
+    "Confirm crossverify.js contains 'multi-model verification' deferral comment"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

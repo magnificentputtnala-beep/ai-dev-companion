@@ -1,0 +1,20 @@
+{
+  "project_type": "Static HTML/CSS/JS single-page application (no bundler, no framework)",
+  "language": "JavaScript (vanilla, browser-targeted)",
+  "build_system": "None - pure static files loaded via script tags in index.html",
+  "test_framework": "None - manual browser testing. For this task, we validate AST analysis via Node.js script",
+  "build_command": "N/A (static HTML page, no build step)",
+  "test_command": "NODE_OPTIONS='' node test-analysis.js (custom test script to validate the AST analysis engine)",
+  "verification_instructions": "1. Run the Node.js test script against the analysis engine to confirm it correctly detects issues in diverse code snippets. 2. Open index.html in a browser and paste code to confirm UI renders findings.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "No setup needed - static HTML/JS. ESLint 10.4.1 is available globally at /root/.nvm/versions/node/v22.22.3/lib/node_modules/eslint/ with espree and acorn bundled.",
+  "environment_constraints": "INTEGRATIONS_ONLY network mode. Cannot npm install. Cannot make real API calls to api.anthropic.com or api.openai.com from this sandbox. ESLint 10.4.1 is pre-installed globally (with espree/acorn). The code must be written to make real API calls that work when the user opens the page on their local machine. The AST analysis portion can be tested in-sandbox. For browser usage, a self-contained JS parser must be included since the browser won't have access to the Node.js ESLint global.",
+  "contribution_requirements": "No formal contributing guide. Push to main branch.",
+  "key_patterns": "Each JS module is a class (CrossVerify, Conversation, Companion, etc.) instantiated in app.js. Classes use init() method for DOM rendering. UI uses glass-card styling, panel layout with panel-header, CSS variables for theming. No module bundler - all classes are global.",
+  "relevant_files": [
+    "js/crossverify.js (main target - complete rewrite)",
+    "index.html (script tags, Cross Verify panel section, inline styles)",
+    "js/app.js (instantiates CrossVerify class, calls init())"
+  ],
+  "directory_structure": "/ - index.html (main page with all inline styles), /js/ - 8 JS files (app.js orchestrator, companion.js, conversation.js, crossverify.js, dashboard.js, features.js, knowledge.js, terminal.js), /css/ - 3 CSS files (main.css, glassmorphism.css, animations.css)"
+}
