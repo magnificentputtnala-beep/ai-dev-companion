@@ -76,9 +76,18 @@ class CrossVerify {
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-xs);">Explanation Provider</label>
                 <select id="cv-provider-select" class="glass-input" style="padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); width: 100%; font-size: var(--font-size-sm);">
                   <option value="none">None (static analysis only)</option>
-                  <option value="claude">Claude (Anthropic)</option>
-                  <option value="chatgpt">ChatGPT (OpenAI)</option>
+                  <optgroup label="Free Providers (No Payment Required)">
+                    <option value="groq">Groq (Llama 3.1 70B)</option>
+                    <option value="gemini">Google Gemini (1.5 Flash)</option>
+                    <option value="mistral">Mistral (Small)</option>
+                    <option value="cerebras">Cerebras (Llama 3.1 70B)</option>
+                  </optgroup>
+                  <optgroup label="Paid Providers">
+                    <option value="claude">Claude (Anthropic)</option>
+                    <option value="chatgpt">ChatGPT (OpenAI)</option>
+                  </optgroup>
                 </select>
+                <p id="cv-provider-help" class="text-xs text-tertiary" style="margin-top: var(--space-xs); font-style: italic;"></p>
               </div>
               <div style="margin-bottom: var(--space-md);">
                 <label class="text-xs text-secondary" style="display: block; margin-bottom: var(--space-xs);">API Key</label>
@@ -120,7 +129,10 @@ class CrossVerify {
       });
     }
     if (providerSelect) {
-      providerSelect.addEventListener('change', () => this.saveSettings());
+      providerSelect.addEventListener('change', () => {
+        this.saveSettings();
+        this.updateProviderHelp();
+      });
     }
     if (apiKeyInput) {
       apiKeyInput.addEventListener('change', () => this.saveSettings());
@@ -135,9 +147,28 @@ class CrossVerify {
       const apiKeyInput = document.getElementById('cv-api-key');
       if (providerSelect) providerSelect.value = provider;
       if (apiKeyInput) apiKeyInput.value = apiKey;
+      this.updateProviderHelp();
     } catch (e) {
       // localStorage unavailable
     }
+  }
+
+  updateProviderHelp() {
+    const provider = document.getElementById('cv-provider-select')?.value || 'none';
+    const helpEl = document.getElementById('cv-provider-help');
+    if (!helpEl) return;
+
+    const helpTexts = {
+      none: '',
+      groq: 'Get free key at console.groq.com (no credit card)',
+      gemini: 'Get free key at aistudio.google.com (no credit card)',
+      mistral: 'Get free key at console.mistral.ai',
+      cerebras: 'Get free key at cloud.cerebras.ai',
+      claude: 'Requires paid API key from console.anthropic.com',
+      chatgpt: 'Requires paid API key from platform.openai.com'
+    };
+
+    helpEl.textContent = helpTexts[provider] || '';
   }
 
   saveSettings() {
@@ -424,6 +455,14 @@ For each finding, provide a brief, conversational explanation. Format your respo
         return await this.callClaude(prompt, apiKey);
       } else if (provider === 'chatgpt') {
         return await this.callChatGPT(prompt, apiKey);
+      } else if (provider === 'groq') {
+        return await this.callGroq(prompt, apiKey);
+      } else if (provider === 'gemini') {
+        return await this.callGemini(prompt, apiKey);
+      } else if (provider === 'mistral') {
+        return await this.callMistral(prompt, apiKey);
+      } else if (provider === 'cerebras') {
+        return await this.callCerebras(prompt, apiKey);
       }
     } catch (e) {
       console.error('AI explanation failed:', e);
@@ -488,6 +527,111 @@ For each finding, provide a brief, conversational explanation. Format your respo
     return null;
   }
 
+  async callGroq(prompt, apiKey) {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-70b-versatile',
+        messages: [
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 1024
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Groq API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.choices && data.choices.length > 0) {
+      return data.choices[0].message.content;
+    }
+    return null;
+  }
+
+  async callGemini(prompt, apiKey) {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.candidates && data.candidates.length > 0 &&
+        data.candidates[0].content && data.candidates[0].content.parts &&
+        data.candidates[0].content.parts.length > 0) {
+      return data.candidates[0].content.parts[0].text;
+    }
+    return null;
+  }
+
+  async callMistral(prompt, apiKey) {
+    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'mistral-small-latest',
+        messages: [
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 1024
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Mistral API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.choices && data.choices.length > 0) {
+      return data.choices[0].message.content;
+    }
+    return null;
+  }
+
+  async callCerebras(prompt, apiKey) {
+    const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'llama3.1-70b',
+        messages: [
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 1024
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Cerebras API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.choices && data.choices.length > 0) {
+      return data.choices[0].message.content;
+    }
+    return null;
+  }
+
   renderResults(findings, explanations, provider) {
     const resultsContent = document.getElementById('cv-results-content');
     const resultsSummary = document.getElementById('cv-results-summary');
@@ -508,7 +652,12 @@ For each finding, provide a brief, conversational explanation. Format your respo
     const errorCount = findings.filter(f => f.severity === 'error').length;
     const warningCount = findings.filter(f => f.severity === 'warning').length;
 
-    const providerLabel = provider === 'claude' ? 'Claude' : provider === 'chatgpt' ? 'ChatGPT' : '';
+    const providerLabel = provider === 'claude' ? 'Claude' :
+      provider === 'chatgpt' ? 'ChatGPT' :
+      provider === 'groq' ? 'Groq' :
+      provider === 'gemini' ? 'Gemini' :
+      provider === 'mistral' ? 'Mistral' :
+      provider === 'cerebras' ? 'Cerebras' : '';
 
     const findingsHtml = findings.map((f, i) => {
       const severityColor = f.severity === 'error' ? 'var(--accent-rose, #f43f5e)' : 'var(--accent-amber, #f59e0b)';
