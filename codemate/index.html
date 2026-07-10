@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeMate — catches AI's mistakes, cuts the junk, explains it simply</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-dot"></span>
+        <span>CodeMate</span>
+      </div>
+      <p class="tagline">Paste your AI-generated code. I'll catch the mistakes, cut the junk, and explain why — like a teammate.</p>
+    </header>
+
+    <!-- Audience selector -->
+    <div class="audience">
+      <button class="active" data-mode="vibe">I'm a Vibe Coder</button>
+      <button data-mode="dev">I'm a Developer</button>
+    </div>
+
+    <!-- Code editor -->
+    <div class="editor-card">
+      <div class="editor-head">
+        <div class="dots"><span class="d-red"></span><span class="d-yellow"></span><span class="d-green"></span></div>
+        <span class="label">Your code (JavaScript)</span>
+      </div>
+      <textarea id="code" spellcheck="false" placeholder="Paste the code your AI tool gave you here..."></textarea>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn btn-primary" id="check-btn">Check my code</button>
+      <button class="btn btn-ghost" id="sample-btn">Load example</button>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="summary" id="summary" style="display:none;"></div>
+
+    <!-- Results -->
+    <div id="results"></div>
+
+    <!-- Optional AI settings -->
+    <details class="settings">
+      <summary>⚙︎ Optional: turn on friendly AI explanations (free)</summary>
+      <div class="settings-body">
+        <p class="hint">The bug detection above already works with zero setup. This only adds a friendlier, conversational explanation using a free AI. Your key stays in your browser and is never sent to us.</p>
+        <label>Explanation AI</label>
+        <select id="provider">
+          <option value="none">None (detection only — no AI)</option>
+          <option value="groq">Groq — Llama 3.1 (free, fast)</option>
+          <option value="gemini">Google Gemini (free)</option>
+        </select>
+        <p class="hint" id="provider-hint"></p>
+        <div id="key-wrap" style="display:none;">
+          <label>Your API key</label>
+          <input type="password" id="api-key" placeholder="Paste your free API key here" autocomplete="off">
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <!-- Scripts: parser first, then brain, then app -->
+  <script src="js/acorn.min.js"></script>
+  <script src="js/analyzer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
